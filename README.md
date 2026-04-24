@@ -149,6 +149,7 @@ Optional envs:
 
 - `TELEGRAM_BOT_TOKEN`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`
+- `SEED_SECRET`
 
 Production values:
 
@@ -161,6 +162,13 @@ Important limitation:
 
 - the current `media` collection uses Payload local disk uploads
 - Vercel filesystem is not durable, so production media uploads should be moved to S3, R2, or another external object storage before relying on admin uploads
+
+Production seeding:
+
+- set `SEED_SECRET` in Vercel
+- trigger `POST /api/admin/seed-demo` once after deploy
+- pass the secret in `Authorization: Bearer <SEED_SECRET>` or `x-seed-secret`
+- the seed is idempotent, so re-running it updates demo services, masters, and working hours instead of duplicating them
 
 ## Phases
 
