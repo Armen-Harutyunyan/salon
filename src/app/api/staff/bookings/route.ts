@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const date = searchParams.get('date') || todayDateString()
 
   if (!token) {
-    return NextResponse.json({ error: 'Invalid staff token' }, { status: 401 })
+    return NextResponse.json({ error: 'Staff token-ը անվավեր է' }, { status: 401 })
   }
 
   const payload = await getPayloadClient()
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
   const token = verifyStaffToken(body.token)
 
   if (!token) {
-    return NextResponse.json({ error: 'Invalid staff token' }, { status: 401 })
+    return NextResponse.json({ error: 'Staff token-ը անվավեր է' }, { status: 401 })
   }
 
   if (!(body.clientName && body.date && body.serviceId && body.slotStart)) {
     return NextResponse.json(
-      { error: 'clientName, date, serviceId and slotStart are required' },
+      { error: 'Պարտադիր են clientName, date, serviceId և slotStart դաշտերը' },
       { status: 400 },
     )
   }
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to create staff booking',
+        error: error instanceof Error ? error.message : 'Չհաջողվեց ստեղծել աշխատակազմի ամրագրումը',
       },
       { status: 400 },
     )

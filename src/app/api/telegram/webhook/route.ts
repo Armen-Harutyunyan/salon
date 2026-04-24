@@ -39,14 +39,14 @@ export async function POST(request: Request) {
       chatId: message.chat.id,
       replyMarkup: master ? buildStaffKeyboard(master) : buildClientKeyboard(),
       text: master
-        ? `Привет, ${master.name}. Открывай staff panel для ручных записей, блокировок и списка клиентов на сегодня.`
-        : 'Открывай mini app и выбирай мастера, услугу и время записи.',
+        ? `Բարև, ${master.name}։ Բացիր աշխատակազմի վահանակը՝ ձեռքով ամրագրումների, արգելափակումների և այսօրվա հաճախորդների ցուցակի համար։`
+        : 'Բացիր Mini App-ը և ընտրիր մասնագետին, ծառայությունը և ամրագրման ժամը։',
     })
 
     return NextResponse.json({ ok: true })
   }
 
-  if (master && text.toLowerCase() === 'мои записи') {
+  if (master && ['мои записи', 'իմ ամրագրումները'].includes(text.toLowerCase())) {
     const bookings = await getMasterTodayBookings(payload, master.id, todayDateString())
 
     await sendTelegramMessage({
@@ -58,11 +58,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true })
   }
 
-  if (master && (text.toLowerCase() === 'новая запись' || text.toLowerCase() === 'блок времени')) {
+  if (
+    master &&
+    ['новая запись', 'блок времени', 'նոր ամրագրում', 'ժամի բլոկ'].includes(text.toLowerCase())
+  ) {
     await sendTelegramMessage({
       chatId: message.chat.id,
       replyMarkup: buildStaffKeyboard(master),
-      text: 'Открой staff panel кнопкой ниже и создай ручную запись или заблокируй интервал.',
+      text: 'Բացիր աշխատակազմի վահանակը ներքևի կոճակով և ստեղծիր ձեռքով ամրագրում կամ արգելափակիր ժամահատվածը։',
     })
 
     return NextResponse.json({ ok: true })
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
     await sendTelegramMessage({
       chatId: message.chat.id,
       replyMarkup: buildClientKeyboard(),
-      text: 'Для записи используй кнопку mini app ниже.',
+      text: 'Ամրագրման համար օգտագործիր ներքևի Mini App կոճակը։',
     })
   }
 

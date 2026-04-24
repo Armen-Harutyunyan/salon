@@ -40,7 +40,7 @@ export function buildClientKeyboard() {
     inline_keyboard: [
       [
         {
-          text: 'Открыть запись',
+          text: 'Բացել ամրագրումը',
           web_app: {
             url: getAppBaseUrl(),
           },
@@ -67,7 +67,7 @@ export function buildStaffKeyboard(master: Master) {
     inline_keyboard: [
       [
         {
-          text: 'Открыть запись',
+          text: 'Բացել ամրագրումը',
           web_app: {
             url: getAppBaseUrl(),
           },
@@ -75,7 +75,7 @@ export function buildStaffKeyboard(master: Master) {
       ],
       [
         {
-          text: 'Открыть staff panel',
+          text: 'Բացել աշխատակազմի վահանակը',
           web_app: {
             url: `${getAppBaseUrl()}/staff?token=${token}`,
           },
@@ -87,14 +87,16 @@ export function buildStaffKeyboard(master: Master) {
 
 export function formatBookingsDigest(bookings: Booking[]) {
   if (!bookings.length) {
-    return 'На сегодня активных записей нет.'
+    return 'Այսօր ակտիվ ամրագրումներ չկան։'
   }
 
   return [
-    'Записи на сегодня:',
+    'Այսօրվա ամրագրումները՝',
     ...bookings.map((booking) => {
       const serviceTitle =
-        typeof booking.service === 'object' && booking.service ? booking.service.title : 'Услуга'
+        typeof booking.service === 'object' && booking.service
+          ? booking.service.title
+          : 'Ծառայություն'
 
       return `• ${formatDateTimeLabel(booking.startsAt)} — ${booking.clientName} (${serviceTitle})`
     }),

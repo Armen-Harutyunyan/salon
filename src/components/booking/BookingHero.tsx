@@ -15,14 +15,14 @@ export function BookingHero(props: BookingHeroProps) {
       <div className="max-w-3xl">
         <div className="liquid-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-cyan-100/78">
           <span className="h-2 w-2 rounded-full bg-emerald-200 shadow-[0_0_18px_rgba(151,247,214,0.8)]" />
-          quick booking
+          արագ ամրագրում
         </div>
         <h1 className="mt-5 text-4xl font-semibold tracking-[-0.05em] text-white sm:text-5xl">
-          Запись в салон без перегруза.
+          Ամրագրում սրահում առանց ավելորդ բարդության։
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200/70">
-          Выбираешь стрижку, мастера и свободное время. Только нужные поля, без лишних карточек и
-          визуального шума.
+          Ընտրիր ծառայությունը, մասնագետին և ազատ ժամը։ Միայն անհրաժեշտ քայլեր, առանց ավելորդ
+          աղմուկի ու ծանր ինտերֆեյսի։
         </p>
       </div>
 

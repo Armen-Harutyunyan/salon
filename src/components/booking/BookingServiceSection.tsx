@@ -14,7 +14,7 @@ export function BookingServiceSection(props: BookingServiceSectionProps) {
     <div className="grid gap-4 md:grid-cols-2">
       <label className="block">
         <span className="mb-2 block text-xs uppercase tracking-[0.26em] text-slate-300/56">
-          Стрижка / услуга
+          Ծառայություն
         </span>
         <select
           className="liquid-input w-full rounded-[1.35rem] px-4 py-4 text-white"
@@ -23,7 +23,7 @@ export function BookingServiceSection(props: BookingServiceSectionProps) {
         >
           {services.map((service) => (
             <option key={service.id} value={service.id}>
-              {service.title} • {service.durationMinutes} мин • {service.price} ₽
+              {service.title} • {service.durationMinutes} րոպե • {service.price} ֏
             </option>
           ))}
         </select>
@@ -32,14 +32,14 @@ export function BookingServiceSection(props: BookingServiceSectionProps) {
       <div className="liquid-panel-soft flex items-center rounded-[1.35rem] px-4 py-4 text-sm text-slate-200/74">
         {selectedService ? (
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-300/52">Выбрано</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-300/52">Ընտրված է</p>
             <p className="mt-2 text-base font-medium text-white">{selectedService.title}</p>
             <p className="mt-1 text-sm text-slate-300/60">
-              {selectedService.durationMinutes} мин • {selectedService.price} ₽
+              {selectedService.durationMinutes} րոպե • {selectedService.price} ֏
             </p>
           </div>
         ) : (
-          'Выбери услугу для загрузки мастеров'
+          'Ընտրիր ծառայությունը՝ մասնագետներին տեսնելու համար'
         )}
       </div>
     </div>

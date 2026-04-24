@@ -11,7 +11,7 @@ export async function GET(request: Request) {
 
   if (!(masterId && serviceId && date)) {
     return NextResponse.json(
-      { error: 'masterId, serviceId and date are required' },
+      { error: 'Պարտադիր են masterId, serviceId և date դաշտերը' },
       { status: 400 },
     )
   }
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to fetch slots',
+        error: error instanceof Error ? error.message : 'Չհաջողվեց ստանալ ազատ ժամերը',
       },
       { status: 400 },
     )

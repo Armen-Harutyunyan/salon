@@ -74,7 +74,7 @@ export function BookingMiniApp() {
     const data = (await response.json()) as { error?: string; slots?: SlotItem[] }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось получить слоты')
+      setError(data.error || 'Չհաջողվեց ստանալ ազատ ժամերը')
       setSlots([])
       return
     }
@@ -94,15 +94,15 @@ export function BookingMiniApp() {
 
   const heroStats = [
     {
-      label: 'Услуги',
-      value: selectedService ? `${selectedService.durationMinutes} мин` : `${services.length}`,
+      label: 'Ծառայություններ',
+      value: selectedService ? `${selectedService.durationMinutes} րոպե` : `${services.length}`,
     },
     {
-      label: 'Мастера',
+      label: 'Մասնագետներ',
       value: `${filteredMasters.length}`,
     },
     {
-      label: 'Слоты',
+      label: 'Ժամեր',
       value: isLoadingSlots ? '...' : `${slots.length}`,
     },
   ]
@@ -129,12 +129,12 @@ export function BookingMiniApp() {
     const data = (await response.json()) as { error?: string }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось создать запись')
+      setError(data.error || 'Չհաջողվեց ստեղծել ամրագրումը')
       return
     }
 
     setSuccessMessage(
-      'Запись создана. Сейчас она сохранена в системе и слот больше не доступен другим клиентам.',
+      'Ամրագրումը ստեղծվեց։ Այն արդեն պահպանվել է համակարգում, և այս ժամը այլևս հասանելի չէ մյուս հաճախորդներին։',
     )
     setClientName('')
     setClientPhone('')

@@ -11,11 +11,11 @@ export async function GET(request: Request) {
   const date = searchParams.get('date')
 
   if (!token) {
-    return NextResponse.json({ error: 'Invalid staff token' }, { status: 401 })
+    return NextResponse.json({ error: 'Staff token-ը անվավեր է' }, { status: 401 })
   }
 
   if (!(serviceId && date)) {
-    return NextResponse.json({ error: 'serviceId and date are required' }, { status: 400 })
+    return NextResponse.json({ error: 'Պարտադիր են serviceId և date դաշտերը' }, { status: 400 })
   }
 
   try {
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to fetch staff slots',
+        error: error instanceof Error ? error.message : 'Չհաջողվեց ստանալ staff ազատ ժամերը',
       },
       { status: 400 },
     )

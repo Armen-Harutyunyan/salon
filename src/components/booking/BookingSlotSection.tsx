@@ -18,7 +18,7 @@ export function BookingSlotSection(props: BookingSlotSectionProps) {
     <div className="mt-4 grid gap-4 md:grid-cols-[0.42fr_1fr]">
       <label className="block">
         <span className="mb-2 block text-xs uppercase tracking-[0.26em] text-slate-300/56">
-          Дата
+          Ամսաթիվ
         </span>
         <input
           className="liquid-input w-full rounded-[1.35rem] px-4 py-4 text-white"
@@ -31,11 +31,9 @@ export function BookingSlotSection(props: BookingSlotSectionProps) {
 
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="text-xs uppercase tracking-[0.26em] text-slate-300/56">
-            Свободное время
-          </span>
+          <span className="text-xs uppercase tracking-[0.26em] text-slate-300/56">Ազատ ժամեր</span>
           <span className="text-xs text-slate-300/62">
-            {isLoadingSlots ? 'считаем...' : `${slots.length} доступно`}
+            {isLoadingSlots ? 'հաշվարկում ենք...' : `${slots.length} հասանելի`}
           </span>
         </div>
 
@@ -62,7 +60,7 @@ export function BookingSlotSection(props: BookingSlotSectionProps) {
 
           {!(slots.length || isLoadingSlots) && (
             <div className="liquid-panel-soft col-span-full rounded-[1.45rem] px-4 py-7 text-sm text-slate-300/68">
-              На выбранную дату свободных окон нет.
+              Ընտրված օրվա համար ազատ ժամ չկա։
             </div>
           )}
         </div>

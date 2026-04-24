@@ -27,6 +27,32 @@ type StaffMiniAppProps = {
   token: string
 }
 
+function getSourceLabel(source: 'phone' | 'staff-bot' | 'walk-in' | string) {
+  switch (source) {
+    case 'phone':
+      return 'Հեռախոս'
+    case 'walk-in':
+      return 'Առանց նախնականի'
+    case 'staff-bot':
+      return 'Staff bot'
+    default:
+      return source
+  }
+}
+
+function getStatusLabel(status: string) {
+  switch (status) {
+    case 'pending':
+      return 'սպասման մեջ'
+    case 'confirmed':
+      return 'հաստատված'
+    case 'cancelled':
+      return 'չեղարկված'
+    default:
+      return status
+  }
+}
+
 export function StaffMiniApp(props: StaffMiniAppProps) {
   const { token } = props
   const [staffData, setStaffData] = useState<StaffMeResponse | null>(null)
@@ -54,7 +80,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     const data = (await response.json()) as StaffMeResponse & { error?: string }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось загрузить staff данные')
+      setError(data.error || 'Չհաջողվեց բեռնել staff տվյալները')
       return
     }
 
@@ -84,7 +110,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     const data = (await response.json()) as { error?: string; slots?: SlotItem[] }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось получить staff слоты')
+      setError(data.error || 'Չհաջողվեց ստանալ staff ազատ ժամերը')
       setSlots([])
       return
     }
@@ -131,11 +157,11 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     const data = (await response.json()) as { error?: string }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось создать ручную запись')
+      setError(data.error || 'Չհաջողվեց ստեղծել ձեռքով ամրագրումը')
       return
     }
 
-    setSuccessMessage('Ручная запись сохранена.')
+    setSuccessMessage('Ձեռքով ամրագրումը պահպանվեց։')
     setClientName('')
     setClientPhone('')
     setNotes('')
@@ -165,11 +191,11 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     const data = (await response.json()) as { error?: string }
 
     if (!response.ok) {
-      setError(data.error || 'Не удалось заблокировать интервал')
+      setError(data.error || 'Չհաջողվեց արգելափակել ժամահատվածը')
       return
     }
 
-    setSuccessMessage('Интервал заблокирован.')
+    setSuccessMessage('Ժամահատվածը արգելափակվեց։')
     setBlockReason('')
     await refreshStaffData()
   }
@@ -177,7 +203,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
   if (!token) {
     return (
       <div className="liquid-panel rounded-[2rem] border-rose-300/22 p-6 text-rose-100">
-        Staff token отсутствует. Эту страницу нужно открывать из staff bot.
+        Staff token-ը բացակայում է։ Այս էջը պետք է բացել staff bot-ից։
       </div>
     )
   }
@@ -186,22 +212,22 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     <div className="space-y-6">
       <section className="liquid-shell rounded-[2.3rem] p-6 sm:p-8">
         <p className="liquid-chip inline-flex rounded-full px-4 py-2 text-xs uppercase tracking-[0.35em] text-emerald-200/80">
-          Staff panel
+          աշխատակազմի վահանակ
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
-          {staffData ? staffData.master.name : 'Загрузка мастера...'}
+          {staffData ? staffData.master.name : 'Մասնագետի բեռնում...'}
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-stone-300">
-          Через эту панель мастер создает ручные записи по звонку и walk-in, а также ставит блоки на
-          перерыв или личную занятость.
+          Այս վահանակով մասնագետը ստեղծում է ձեռքով ամրագրումներ զանգից կամ տեղում այցից, ինչպես նաև
+          դնում է զբաղվածության կամ ընդմիջման բլոկներ։
         </p>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="liquid-panel rounded-[2rem] p-6 sm:p-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Новая ручная запись</h2>
-            {isLoading && <span className="text-sm text-amber-200">обновление...</span>}
+            <h2 className="text-xl font-semibold text-white">Նոր ձեռքով ամրագրում</h2>
+            {isLoading && <span className="text-sm text-amber-200">թարմացում...</span>}
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -212,7 +238,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
             >
               {(staffData?.services || []).map((service) => (
                 <option key={service.id} value={service.id}>
-                  {service.title} • {service.durationMinutes} мин
+                  {service.title} • {service.durationMinutes} րոպե
                 </option>
               ))}
             </select>
@@ -250,13 +276,13 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
             <input
               className="liquid-input rounded-2xl px-4 py-3 text-white"
               onChange={(event) => setClientName(event.target.value)}
-              placeholder="Имя клиента"
+              placeholder="Հաճախորդի անուն"
               value={clientName}
             />
             <input
               className="liquid-input rounded-2xl px-4 py-3 text-white"
               onChange={(event) => setClientPhone(event.target.value)}
-              placeholder="Телефон"
+              placeholder="Հեռախոս"
               value={clientPhone}
             />
           </div>
@@ -269,14 +295,14 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
               }
               value={source}
             >
-              <option value="phone">Телефон</option>
-              <option value="walk-in">Walk-in</option>
+              <option value="phone">Հեռախոս</option>
+              <option value="walk-in">Առանց նախնականի</option>
               <option value="staff-bot">Staff bot</option>
             </select>
             <textarea
               className="liquid-input min-h-28 rounded-2xl px-4 py-3 text-white"
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Комментарий к записи"
+              placeholder="Նշում ամրագրման համար"
               value={notes}
             />
           </div>
@@ -289,20 +315,20 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
             onClick={() => startBookingTransition(submitManualBooking)}
             type="button"
           >
-            {isSubmittingBooking ? 'Сохраняем...' : 'Создать ручную запись'}
+            {isSubmittingBooking ? 'Պահպանում ենք...' : 'Ստեղծել ձեռքով ամրագրում'}
           </button>
 
           {selectedService && (
             <p className="mt-3 text-sm text-stone-400">
-              Текущая услуга: {selectedService.title}, длительность{' '}
-              {selectedService.durationMinutes} мин.
+              Ընթացիկ ծառայությունը՝ {selectedService.title}, տևողությունը{' '}
+              {selectedService.durationMinutes} րոպե։
             </p>
           )}
         </section>
 
         <section className="space-y-6">
           <div className="liquid-panel rounded-[2rem] p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-white">Блок времени</h2>
+            <h2 className="text-xl font-semibold text-white">Ժամի արգելափակում</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <input
                 className="liquid-input rounded-2xl px-4 py-3 text-white"
@@ -316,8 +342,8 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
                 onChange={(event) => setBlockType(event.target.value as 'blocked' | 'break')}
                 value={blockType}
               >
-                <option value="blocked">Занят</option>
-                <option value="break">Перерыв</option>
+                <option value="blocked">Զբաղված</option>
+                <option value="break">Ընդմիջում</option>
               </select>
             </div>
 
@@ -339,7 +365,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
             <textarea
               className="liquid-input mt-4 min-h-24 w-full rounded-2xl px-4 py-3 text-white"
               onChange={(event) => setBlockReason(event.target.value)}
-              placeholder="Причина блокировки"
+              placeholder="Արգելափակման պատճառ"
               value={blockReason}
             />
 
@@ -349,12 +375,12 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
               onClick={() => startBlockTransition(submitBlock)}
               type="button"
             >
-              {isSubmittingBlock ? 'Сохраняем...' : 'Заблокировать интервал'}
+              {isSubmittingBlock ? 'Պահպանում ենք...' : 'Արգելափակել ժամահատվածը'}
             </button>
           </div>
 
           <div className="liquid-panel rounded-[2rem] p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-white">Записи на сегодня</h2>
+            <h2 className="text-xl font-semibold text-white">Այսօրվա ամրագրումները</h2>
             <div className="mt-4 space-y-3">
               {(staffData?.bookings || []).map((booking) => (
                 <div
@@ -366,14 +392,14 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
                     {formatDateTimeLabel(booking.startsAt)} • {booking.serviceTitle}
                   </p>
                   <p className="mt-1 text-stone-500">
-                    {booking.source} • {booking.status}
+                    {getSourceLabel(booking.source)} • {getStatusLabel(booking.status)}
                   </p>
                 </div>
               ))}
 
               {!staffData?.bookings.length && (
                 <div className="liquid-panel-soft rounded-2xl px-4 py-6 text-sm text-stone-400">
-                  Сегодня записей пока нет.
+                  Այսօր դեռ ամրագրումներ չկան։
                 </div>
               )}
             </div>

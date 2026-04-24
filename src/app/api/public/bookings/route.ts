@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
   if (!(body.clientName && body.date && body.masterId && body.serviceId && body.slotStart)) {
     return NextResponse.json(
-      { error: 'clientName, date, masterId, serviceId and slotStart are required' },
+      { error: 'Պարտադիր են clientName, date, masterId, serviceId և slotStart դաշտերը' },
       { status: 400 },
     )
   }
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to create booking',
+        error: error instanceof Error ? error.message : 'Չհաջողվեց ստեղծել ամրագրումը',
       },
       { status: 400 },
     )

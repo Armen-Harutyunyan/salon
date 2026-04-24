@@ -18,12 +18,12 @@ export async function POST(request: Request) {
   const token = verifyStaffToken(body.token)
 
   if (!token) {
-    return NextResponse.json({ error: 'Invalid staff token' }, { status: 401 })
+    return NextResponse.json({ error: 'Staff token-ը անվավեր է' }, { status: 401 })
   }
 
   if (!(body.date && body.startTime && body.endTime && body.reason && body.type)) {
     return NextResponse.json(
-      { error: 'date, startTime, endTime, reason and type are required' },
+      { error: 'Պարտադիր են date, startTime, endTime, reason և type դաշտերը' },
       { status: 400 },
     )
   }
@@ -44,7 +44,8 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to create blocked interval',
+        error:
+          error instanceof Error ? error.message : 'Չհաջողվեց ստեղծել արգելափակված ժամահատվածը',
       },
       { status: 400 },
     )

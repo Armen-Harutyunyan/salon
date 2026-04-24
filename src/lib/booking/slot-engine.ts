@@ -49,7 +49,7 @@ async function getService(payload: Payload, serviceId: string) {
   })) as Service
 
   if (!service?.isActive) {
-    throw new Error('Service is not available')
+    throw new Error('Ծառայությունը հասանելի չէ')
   }
 
   return service
@@ -64,7 +64,7 @@ async function getMaster(payload: Payload, masterId: string) {
   })) as Master
 
   if (!master?.isActive) {
-    throw new Error('Master is not available')
+    throw new Error('Մասնագետը հասանելի չէ')
   }
 
   return master
@@ -203,7 +203,7 @@ function ensureMasterCanProvideService(master: Master, serviceId: string) {
   const allowedServiceIds = relationsToIds(master.services)
 
   if (!allowedServiceIds.includes(serviceId)) {
-    throw new Error('Selected master does not provide this service')
+    throw new Error('Ընտրված մասնագետը չի մատուցում այս ծառայությունը')
   }
 }
 
@@ -212,7 +212,7 @@ function slotToResponse(slot: TimeInterval): SlotItem {
   const end = slot.end.toUTC().toISO()
 
   if (!(start && end)) {
-    throw new Error('Failed to serialize slot interval')
+    throw new Error('Չհաջողվեց ձևավորել ժամի միջակայքը')
   }
 
   return {
@@ -238,7 +238,7 @@ export async function getAvailableSlots(input: SlotInput): Promise<SlotItem[]> {
   const { date, masterId, payload, serviceId } = input
 
   if (!isValidDateInput(date)) {
-    throw new Error('Invalid date')
+    throw new Error('Ամսաթիվը անվավեր է')
   }
 
   const [master, service] = await Promise.all([
@@ -343,7 +343,7 @@ export async function createBookingRecord(args: {
   const matchedSlot = slots.find((item) => item.start === slotStart)
 
   if (!matchedSlot) {
-    throw new Error('Selected slot is no longer available')
+    throw new Error('Ընտրված ժամը այլևս հասանելի չէ')
   }
 
   const service = await getService(payload, serviceId)
@@ -383,7 +383,7 @@ export async function createBlockedInterval(args: {
   const exceptionDate = combineDateAndTime(args.date, '00:00').toUTC().toISO()
 
   if (!exceptionDate) {
-    throw new Error('Failed to serialize blocked interval date')
+    throw new Error('Չհաջողվեց ձևավորել արգելափակված ժամահատվածի ամսաթիվը')
   }
 
   const created = await args.payload.create({
@@ -407,7 +407,7 @@ export function bookingToPublicItem(booking: Booking) {
     typeof booking.master === 'object' && booking.master
       ? booking.master.name ||
         ((booking.master as unknown as { fullName?: string | null }).fullName ?? '') ||
-        'Мастер'
+        'Մասնագետ'
       : relationToId(booking.master) || ''
   const serviceTitle =
     typeof booking.service === 'object' && booking.service

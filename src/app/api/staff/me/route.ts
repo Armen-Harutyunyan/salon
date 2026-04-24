@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const token = verifyStaffToken(searchParams.get('token'))
 
   if (!token) {
-    return NextResponse.json({ error: 'Invalid staff token' }, { status: 401 })
+    return NextResponse.json({ error: 'Staff token-ը անվավեր է' }, { status: 401 })
   }
 
   const payload = await getPayloadClient()
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     }))
 
   const fallbackName = ((master as unknown as { fullName?: string | null }).fullName || '').trim()
-  const resolvedName = master.name?.trim() || fallbackName || 'Мастер'
+  const resolvedName = master.name?.trim() || fallbackName || 'Մասնագետ'
 
   return NextResponse.json({
     bookings: bookings.map((booking) => bookingToPublicItem(booking)),

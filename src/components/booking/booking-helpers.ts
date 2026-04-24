@@ -1,5 +1,5 @@
 export function getMasterInitials(name?: string | null) {
-  const safeName = (name || 'Мастер').trim()
+  const safeName = (name || 'Մասնագետ').trim()
 
   return safeName
     .split(' ')

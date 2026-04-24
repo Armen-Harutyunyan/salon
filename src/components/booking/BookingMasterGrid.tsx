@@ -18,8 +18,8 @@ export function BookingMasterGrid(props: BookingMasterGridProps) {
   return (
     <div className="mt-5">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="text-xs uppercase tracking-[0.26em] text-slate-300/56">Мастер</span>
-        <span className="text-xs text-slate-300/62">{masters.length} доступно</span>
+        <span className="text-xs uppercase tracking-[0.26em] text-slate-300/56">Մասնագետ</span>
+        <span className="text-xs text-slate-300/62">{masters.length} հասանելի</span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -60,7 +60,7 @@ export function BookingMasterGrid(props: BookingMasterGridProps) {
                   <div className="min-w-0">
                     <p className="truncate text-base font-medium text-white">{master.name}</p>
                     <p className="mt-1 truncate text-sm text-slate-300/60">
-                      {master.specialty || 'Мастер салона'}
+                      {master.specialty || 'Սրահի մասնագետ'}
                     </p>
                   </div>
                 </div>
@@ -71,7 +71,7 @@ export function BookingMasterGrid(props: BookingMasterGridProps) {
 
         {!masters.length && (
           <div className="liquid-panel-soft col-span-full rounded-[1.45rem] px-4 py-7 text-sm text-slate-300/68">
-            Для выбранной услуги нет доступных мастеров.
+            Ընտրված ծառայության համար հասանելի մասնագետներ չկան։
           </div>
         )}
       </div>

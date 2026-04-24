@@ -17,7 +17,7 @@ export function toPublicServiceItem(service: Service): PublicServiceItem {
 export function toPublicMasterItem(master: Master): PublicMasterItem {
   const media = typeof master.photo === 'object' && master.photo ? master.photo : null
   const fallbackName = ((master as unknown as { fullName?: string | null }).fullName || '').trim()
-  const resolvedName = master.name?.trim() || fallbackName || 'Мастер'
+  const resolvedName = master.name?.trim() || fallbackName || 'Մասնագետ'
 
   return {
     id: master.id,
