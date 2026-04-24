@@ -44,7 +44,7 @@ export const Masters: CollectionConfig = {
     },
     {
       name: 'photo',
-      type: 'relationship',
+      type: 'upload',
       relationTo: 'media',
     },
     {
