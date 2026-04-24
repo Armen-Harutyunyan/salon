@@ -1,3 +1,4 @@
+import type { KeyboardEvent, MouseEvent } from 'react'
 import { todayDateString } from '@/lib/booking/time'
 import type { SlotItem } from '@/lib/booking/types'
 
@@ -14,16 +15,36 @@ export function BookingSlotSection(props: BookingSlotSectionProps) {
   const { isLoadingSlots, onDateChange, onSlotSelect, selectedDate, selectedSlotStart, slots } =
     props
 
+  function openDatePicker(event: MouseEvent<HTMLInputElement>) {
+    event.currentTarget.showPicker?.()
+  }
+
+  function handleDateKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Tab') {
+      return
+    }
+
+    event.preventDefault()
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.currentTarget.showPicker?.()
+    }
+  }
+
   return (
-    <div className="mt-4 grid gap-4 md:grid-cols-[0.42fr_1fr]">
-      <label className="block">
+    <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,0.46fr)_minmax(0,1fr)]">
+      <label className="block min-w-0">
         <span className="mb-2 block text-xs uppercase tracking-[0.26em] text-slate-300/56">
           Ամսաթիվ
         </span>
         <input
-          className="liquid-input w-full rounded-[1.35rem] px-4 py-4 text-white"
+          className="liquid-input w-full min-w-0 rounded-[1.35rem] px-4 py-4 text-white"
+          inputMode="none"
+          onClick={openDatePicker}
           min={todayDateString()}
           onChange={(event) => onDateChange(event.target.value)}
+          onKeyDown={handleDateKeyDown}
+          onPaste={(event) => event.preventDefault()}
           type="date"
           value={selectedDate}
         />
