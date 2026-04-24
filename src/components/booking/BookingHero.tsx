@@ -26,13 +26,18 @@ export function BookingHero(props: BookingHeroProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 self-stretch lg:w-[22rem]">
         {stats.map((item) => (
-          <div key={item.label} className="liquid-panel-soft rounded-[1.45rem] px-4 py-4">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-slate-300/55">
+          <div
+            key={item.label}
+            className="liquid-panel-soft flex min-h-[8.6rem] flex-col justify-between rounded-[1.45rem] px-4 py-4"
+          >
+            <p className="text-[10px] leading-tight tracking-[0.08em] text-slate-300/55 sm:tracking-[0.12em]">
               {item.label}
             </p>
-            <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-white">{item.value}</p>
+            <p className="mt-3 text-xl font-semibold leading-none tracking-[-0.04em] text-white sm:text-[1.75rem]">
+              {item.value}
+            </p>
           </div>
         ))}
       </div>
