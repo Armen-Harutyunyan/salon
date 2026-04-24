@@ -32,7 +32,7 @@ export function BookingHero(props: BookingHeroProps) {
             key={item.label}
             className="liquid-panel-soft last:col-span-2 flex min-h-[7.25rem] flex-col gap-3 rounded-[1.45rem] px-4 py-4 sm:last:col-span-1"
           >
-            <p className="max-w-[11ch] text-[11px] leading-[1.15rem] tracking-[0.04em] text-slate-300/60 [overflow-wrap:anywhere] sm:max-w-none sm:text-xs sm:tracking-[0.08em]">
+            <p className="max-w-full text-[11px] leading-[1.15rem] tracking-[0.04em] text-slate-300/60 [overflow-wrap:anywhere] sm:max-w-none sm:text-xs sm:tracking-[0.08em]">
               {item.label}
             </p>
             <p className="text-[1.35rem] font-semibold leading-none tracking-[-0.04em] text-white sm:text-[1.75rem]">

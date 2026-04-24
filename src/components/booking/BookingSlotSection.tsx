@@ -37,17 +37,47 @@ export function BookingSlotSection(props: BookingSlotSectionProps) {
         <span className="mb-2 block text-xs uppercase tracking-[0.26em] text-slate-300/56">
           Ամսաթիվ
         </span>
-        <input
-          className="liquid-input w-full min-w-0 rounded-[1.35rem] px-4 py-4 text-white"
-          inputMode="none"
-          onClick={openDatePicker}
-          min={todayDateString()}
-          onChange={(event) => onDateChange(event.target.value)}
-          onKeyDown={handleDateKeyDown}
-          onPaste={(event) => event.preventDefault()}
-          type="date"
-          value={selectedDate}
-        />
+        <div className="liquid-input relative min-w-0 overflow-hidden rounded-[1.35rem] focus-within:border-emerald-200/50 focus-within:ring-4 focus-within:ring-emerald-200/10">
+          <div
+            aria-hidden="true"
+            className="flex min-h-[3.875rem] items-center px-4 py-4 pr-14 text-white"
+          >
+            <span className="block min-w-0 truncate leading-[1.35]">{selectedDate}</span>
+          </div>
+
+          <input
+            className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+            inputMode="none"
+            onClick={openDatePicker}
+            min={todayDateString()}
+            onChange={(event) => onDateChange(event.target.value)}
+            onKeyDown={handleDateKeyDown}
+            onPaste={(event) => event.preventDefault()}
+            type="date"
+            value={selectedDate}
+          />
+
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/82"
+          >
+            <svg
+              fill="none"
+              height="16"
+              viewBox="0 0 16 16"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 1.75V3.25M11 1.75V3.25M2.5 5.25H13.5M4.25 7.5H5.75M7.25 7.5H8.75M10.25 7.5H11.75M4.25 10.25H5.75M7.25 10.25H8.75M10.25 10.25H11.75M4 3.25H12C12.8284 3.25 13.5 3.92157 13.5 4.75V12C13.5 12.8284 12.8284 13.5 12 13.5H4C3.17157 13.5 2.5 12.8284 2.5 12V4.75C2.5 3.92157 3.17157 3.25 4 3.25Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.25"
+              />
+            </svg>
+          </span>
+        </div>
       </label>
 
       <div>
