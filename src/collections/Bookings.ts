@@ -1,7 +1,12 @@
+import { DateTime } from 'luxon'
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '@/access/isAdmin'
 import { bookingSources, bookingStatuses } from '@/constants/booking'
+import { generateBookingReferenceCode } from '@/lib/booking/reference'
+import { ensureValidIsoDateRange } from '@/lib/booking/validation'
+import { releaseBookingLocks, syncBookingLocksForBooking } from '@/lib/booking-locks'
+import type { Booking } from '@/payload-types'
 
 export const Bookings: CollectionConfig = {
   slug: 'bookings',
@@ -14,6 +19,54 @@ export const Bookings: CollectionConfig = {
   admin: {
     useAsTitle: 'clientName',
   },
+  hooks: {
+    afterChange: [
+      async ({ context, doc, req }) => {
+        if (context?.skipBookingLockSync) {
+          return doc
+        }
+
+        await syncBookingLocksForBooking(req.payload, doc as unknown as Booking)
+        return doc
+      },
+    ],
+    afterDelete: [
+      async ({ doc, req }) => {
+        await releaseBookingLocks(req.payload, String(doc.id))
+        return doc
+      },
+    ],
+    beforeValidate: [
+      ({ data, operation }) => {
+        if (!data) {
+          return data
+        }
+
+        if (operation === 'create' && !data.referenceCode) {
+          data.referenceCode = generateBookingReferenceCode()
+        }
+
+        if (typeof data.startsAt === 'string' && typeof data.endsAt === 'string') {
+          ensureValidIsoDateRange(data.startsAt, data.endsAt)
+        }
+
+        if (data.status === 'completed' || data.status === 'no-show') {
+          const startsAt =
+            typeof data.startsAt === 'string'
+              ? DateTime.fromISO(data.startsAt)
+              : DateTime.invalid('')
+
+          if (startsAt.isValid && startsAt > DateTime.now()) {
+            throw new Error(
+              'Completed կամ No Show կարգավիճակները կարելի է դնել միայն սկսված այցերի համար',
+            )
+          }
+        }
+
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'clientName',
@@ -23,6 +76,14 @@ export const Bookings: CollectionConfig = {
     {
       name: 'clientPhone',
       type: 'text',
+    },
+    {
+      name: 'referenceCode',
+      type: 'text',
+      admin: {
+        readOnly: true,
+      },
+      required: true,
     },
     {
       name: 'source',

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { expireStalePendingBookings } from '@/lib/booking/pending'
 import { getAvailableSlots } from '@/lib/booking/slot-engine'
 import { getPayloadClient } from '@/lib/payload'
 
@@ -18,6 +19,7 @@ export async function GET(request: Request) {
 
   try {
     const payload = await getPayloadClient()
+    await expireStalePendingBookings(payload)
     const slots = await getAvailableSlots({
       date,
       masterId,

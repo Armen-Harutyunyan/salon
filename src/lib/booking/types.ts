@@ -31,6 +31,7 @@ export type PublicBookingItem = {
   endsAt: string
   id: string
   masterName: string
+  referenceCode: string | null
   serviceTitle: string
   source: string
   startsAt: string

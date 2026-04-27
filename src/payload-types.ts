@@ -264,6 +264,7 @@ export interface Booking {
   id: string;
   clientName: string;
   clientPhone?: string | null;
+  referenceCode: string;
   source: 'telegram' | 'phone' | 'walk-in' | 'staff-bot';
   telegramUserId?: string | null;
   master: string | Master;
@@ -488,6 +489,7 @@ export interface ScheduleExceptionsSelect<T extends boolean = true> {
 export interface BookingsSelect<T extends boolean = true> {
   clientName?: T;
   clientPhone?: T;
+  referenceCode?: T;
   source?: T;
   telegramUserId?: T;
   master?: T;

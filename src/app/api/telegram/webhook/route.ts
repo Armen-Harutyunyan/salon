@@ -1,6 +1,8 @@
+import { timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { getMasterByTelegramUserId, getMasterTodayBookings } from '@/lib/booking/slot-engine'
 import { todayDateString } from '@/lib/booking/time'
+import { getTelegramWebhookSecret } from '@/lib/env'
 import { getPayloadClient } from '@/lib/payload'
 import {
   buildClientKeyboard,
@@ -21,7 +23,66 @@ type TelegramUpdate = {
   }
 }
 
+function isAuthorizedWebhookRequest(request: Request) {
+  const expectedSecret = getTelegramWebhookSecret()
+
+  if (!expectedSecret) {
+    return true
+  }
+
+  const receivedSecret = request.headers.get('x-telegram-bot-api-secret-token')?.trim() || ''
+  const expectedBuffer = Buffer.from(expectedSecret)
+  const receivedBuffer = Buffer.from(receivedSecret)
+
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    timingSafeEqual(expectedBuffer, receivedBuffer)
+  )
+}
+
+async function replyToStart(
+  chatId: number,
+  master: Awaited<ReturnType<typeof getMasterByTelegramUserId>>,
+) {
+  await sendTelegramMessage({
+    chatId,
+    replyMarkup: master ? buildStaffKeyboard(master) : buildClientKeyboard(),
+    text: master
+      ? `Բարև, ${master.name}։ Բացիր աշխատակազմի վահանակը՝ ձեռքով ամրագրումների, արգելափակումների և այսօրվա հաճախորդների ցուցակի համար։`
+      : 'Բացիր Mini App-ը և ընտրիր մասնագետին, ծառայությունը և ամրագրման ժամը։',
+  })
+}
+
+async function replyToMasterShortcut(
+  chatId: number,
+  master: NonNullable<Awaited<ReturnType<typeof getMasterByTelegramUserId>>>,
+) {
+  await sendTelegramMessage({
+    chatId,
+    replyMarkup: buildStaffKeyboard(master),
+    text: 'Բացիր աշխատակազմի վահանակը ներքևի կոճակով և ստեղծիր ձեռքով ամրագրում կամ արգելափակիր ժամահատվածը։',
+  })
+}
+
+async function replyWithTodayBookings(
+  chatId: number,
+  master: NonNullable<Awaited<ReturnType<typeof getMasterByTelegramUserId>>>,
+) {
+  const payload = await getPayloadClient()
+  const bookings = await getMasterTodayBookings(payload, master.id, todayDateString())
+
+  await sendTelegramMessage({
+    chatId,
+    replyMarkup: buildStaffKeyboard(master),
+    text: formatBookingsDigest(bookings),
+  })
+}
+
 export async function POST(request: Request) {
+  if (!isAuthorizedWebhookRequest(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const update = (await request.json()) as TelegramUpdate
   const message = update.message
 
@@ -35,26 +96,12 @@ export async function POST(request: Request) {
   const text = (message.text || '').trim()
 
   if (text === '/start') {
-    await sendTelegramMessage({
-      chatId: message.chat.id,
-      replyMarkup: master ? buildStaffKeyboard(master) : buildClientKeyboard(),
-      text: master
-        ? `Բարև, ${master.name}։ Բացիր աշխատակազմի վահանակը՝ ձեռքով ամրագրումների, արգելափակումների և այսօրվա հաճախորդների ցուցակի համար։`
-        : 'Բացիր Mini App-ը և ընտրիր մասնագետին, ծառայությունը և ամրագրման ժամը։',
-    })
-
+    await replyToStart(message.chat.id, master)
     return NextResponse.json({ ok: true })
   }
 
   if (master && ['мои записи', 'իմ ամրագրումները'].includes(text.toLowerCase())) {
-    const bookings = await getMasterTodayBookings(payload, master.id, todayDateString())
-
-    await sendTelegramMessage({
-      chatId: message.chat.id,
-      replyMarkup: buildStaffKeyboard(master),
-      text: formatBookingsDigest(bookings),
-    })
-
+    await replyWithTodayBookings(message.chat.id, master)
     return NextResponse.json({ ok: true })
   }
 
@@ -62,12 +109,7 @@ export async function POST(request: Request) {
     master &&
     ['новая запись', 'блок времени', 'նոր ամրագրում', 'ժամի բլոկ'].includes(text.toLowerCase())
   ) {
-    await sendTelegramMessage({
-      chatId: message.chat.id,
-      replyMarkup: buildStaffKeyboard(master),
-      text: 'Բացիր աշխատակազմի վահանակը ներքևի կոճակով և ստեղծիր ձեռքով ամրագրում կամ արգելափակիր ժամահատվածը։',
-    })
-
+    await replyToMasterShortcut(message.chat.id, master)
     return NextResponse.json({ ok: true })
   }
 

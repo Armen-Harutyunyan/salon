@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '@/access/isAdmin'
 import { weekdays } from '@/constants/booking'
+import { ensureValidTimeRange } from '@/lib/booking/validation'
 
 export const WorkingHours: CollectionConfig = {
   slug: 'working-hours',
@@ -13,6 +14,17 @@ export const WorkingHours: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'weekday',
+  },
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (data?.startTime && data?.endTime) {
+          ensureValidTimeRange(data.startTime, data.endTime, 'Աշխատանքային ժամերը անվավեր են')
+        }
+
+        return data
+      },
+    ],
   },
   fields: [
     {

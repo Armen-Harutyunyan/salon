@@ -15,6 +15,6 @@ test.describe('Frontend', () => {
 
     const heading = page.locator('h1').first()
 
-    await expect(heading).toContainText('Запись в парикмахерскую через Telegram')
+    await expect(heading).toContainText('Ամրագրում սրահում առանց ավելորդ բարդության')
   })
 })

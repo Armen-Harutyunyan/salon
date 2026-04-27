@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { expireStalePendingBookings } from '@/lib/booking/pending'
 import { bookingToPublicItem, getMasterTodayBookings } from '@/lib/booking/slot-engine'
 import { todayDateString } from '@/lib/booking/time'
 import { getPayloadClient } from '@/lib/payload'
@@ -16,6 +17,7 @@ export async function GET(request: Request) {
   }
 
   const payload = await getPayloadClient()
+  await expireStalePendingBookings(payload)
   const [master, servicesResult, bookings] = await Promise.all([
     payload.findByID({
       collection: 'masters',

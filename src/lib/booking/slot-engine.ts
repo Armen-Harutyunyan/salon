@@ -1,9 +1,17 @@
 import { DateTime } from 'luxon'
-import type { Payload, Where } from 'payload'
+import type { Payload, RequiredDataFromCollectionSlug, Where } from 'payload'
+import {
+  confirmBookingWindowReservation,
+  releaseBookingLocks,
+  releaseBookingWindowReservation,
+  reserveBookingWindow,
+  shouldBookingBlockSchedule,
+} from '@/lib/booking-locks'
 import { getSlotIntervalMinutes } from '@/lib/env'
+import { validatePhone } from '@/lib/phone'
 import { relationsToIds, relationToId } from '@/lib/relations'
 import type { Booking, Master, ScheduleException, Service, WorkingHour } from '@/payload-types'
-
+import { generateBookingReferenceCode } from './reference'
 import {
   combineDateAndTime,
   formatTimeLabel,
@@ -12,6 +20,7 @@ import {
   isValidDateInput,
 } from './time'
 import type { SlotItem } from './types'
+import { ensureValidDateInput, ensureValidTimeRange } from './validation'
 
 type TimeInterval = {
   end: DateTime
@@ -132,7 +141,7 @@ async function getExceptions(payload: Payload, masterId: string, date: string) {
   return result.docs as ScheduleException[]
 }
 
-async function getBookings(payload: Payload, masterId: string, date: string) {
+async function getBlockingBookings(payload: Payload, masterId: string, date: string) {
   const { endISO, startISO } = getDayBounds(date)
 
   const where: Where = {
@@ -154,7 +163,7 @@ async function getBookings(payload: Payload, masterId: string, date: string) {
       },
       {
         status: {
-          not_equals: 'cancelled',
+          in: ['pending', 'confirmed'],
         },
       },
     ],
@@ -166,6 +175,39 @@ async function getBookings(payload: Payload, masterId: string, date: string) {
     limit: 200,
     overrideAccess: true,
     where,
+  })
+
+  return result.docs as Booking[]
+}
+
+async function getMasterDayBookings(payload: Payload, masterId: string, date: string) {
+  const { endISO, startISO } = getDayBounds(date)
+
+  const result = await payload.find({
+    collection: 'bookings',
+    depth: 1,
+    limit: 200,
+    overrideAccess: true,
+    sort: 'startsAt',
+    where: {
+      and: [
+        {
+          master: {
+            equals: masterId,
+          },
+        },
+        {
+          startsAt: {
+            less_than: endISO,
+          },
+        },
+        {
+          endsAt: {
+            greater_than: startISO,
+          },
+        },
+      ],
+    },
   })
 
   return result.docs as Booking[]
@@ -253,7 +295,7 @@ export async function getAvailableSlots(input: SlotInput): Promise<SlotItem[]> {
   const [workingHours, exceptions, bookings] = await Promise.all([
     getWorkingHours(payload, masterId, weekday),
     getExceptions(payload, masterId, date),
-    getBookings(payload, masterId, date),
+    getBlockingBookings(payload, masterId, date),
   ])
 
   const baseIntervals = hoursToIntervals(workingHours, date)
@@ -301,9 +343,50 @@ export async function getMasterByTelegramUserId(payload: Payload, telegramUserId
 }
 
 export async function getMasterTodayBookings(payload: Payload, masterId: string, date: string) {
-  const bookings = await getBookings(payload, masterId, date)
+  const bookings = await getMasterDayBookings(payload, masterId, date)
 
   return bookings.sort((left, right) => left.startsAt.localeCompare(right.startsAt))
+}
+
+export async function getTelegramUserUpcomingBookings(payload: Payload, telegramUserId: string) {
+  const nowISO = DateTime.utc().toISO()
+
+  const result = await payload.find({
+    collection: 'bookings',
+    depth: 1,
+    limit: 50,
+    overrideAccess: true,
+    sort: 'startsAt',
+    where: {
+      and: [
+        {
+          telegramUserId: {
+            equals: telegramUserId,
+          },
+        },
+        ...(nowISO
+          ? [
+              {
+                endsAt: {
+                  greater_than_equal: nowISO,
+                },
+              },
+            ]
+          : []),
+      ],
+    },
+  })
+
+  return result.docs as Booking[]
+}
+
+export async function getBookingById(payload: Payload, bookingId: string) {
+  return (await payload.findByID({
+    collection: 'bookings',
+    depth: 1,
+    id: bookingId,
+    overrideAccess: true,
+  })) as Booking
 }
 
 export async function createBookingRecord(args: {
@@ -333,6 +416,9 @@ export async function createBookingRecord(args: {
     telegramUserId,
   } = args
 
+  ensureValidDateInput(date)
+  const normalizedPhone = validatePhone(clientPhone)
+
   const slots = await getAvailableSlots({
     date,
     masterId,
@@ -347,28 +433,50 @@ export async function createBookingRecord(args: {
   }
 
   const service = await getService(payload, serviceId)
-
-  const createdBooking = await payload.create({
-    collection: 'bookings',
-    data: {
-      clientName,
-      clientPhone,
-      durationMinutes: service.durationMinutes,
-      endsAt: matchedSlot.end,
-      master: masterId,
-      notes,
-      priceSnapshot: service.price,
-      service: serviceId,
-      source,
-      startsAt: matchedSlot.start,
-      status: status || (source === 'telegram' ? 'pending' : 'confirmed'),
-      telegramUserId,
-    },
-    depth: 1,
-    overrideAccess: true,
+  const reservationId = await reserveBookingWindow({
+    endISO: matchedSlot.end,
+    masterId,
+    payload,
+    startISO: matchedSlot.start,
   })
+  const bookingData: RequiredDataFromCollectionSlug<'bookings'> = {
+    clientName: clientName.trim(),
+    clientPhone: normalizedPhone || undefined,
+    durationMinutes: service.durationMinutes,
+    endsAt: matchedSlot.end,
+    master: masterId,
+    notes: notes?.trim(),
+    priceSnapshot: service.price,
+    referenceCode: generateBookingReferenceCode(),
+    service: serviceId,
+    source,
+    startsAt: matchedSlot.start,
+    status: status || (source === 'telegram' ? 'pending' : 'confirmed'),
+    telegramUserId,
+  }
 
-  return createdBooking as Booking
+  try {
+    const createdBooking = (await payload.create({
+      collection: 'bookings',
+      context: {
+        skipBookingLockSync: true,
+      },
+      data: bookingData,
+      depth: 1,
+      overrideAccess: true,
+    })) as Booking
+
+    await confirmBookingWindowReservation({
+      bookingId: createdBooking.id,
+      payload,
+      reservationId,
+    })
+
+    return createdBooking
+  } catch (error) {
+    await releaseBookingWindowReservation(payload, reservationId)
+    throw error
+  }
 }
 
 export async function createBlockedInterval(args: {
@@ -380,6 +488,9 @@ export async function createBlockedInterval(args: {
   startTime: string
   type: 'blocked' | 'break'
 }) {
+  ensureValidDateInput(args.date)
+  ensureValidTimeRange(args.startTime, args.endTime, 'Արգելափակման ժամային միջակայքը անվավեր է')
+
   const exceptionDate = combineDateAndTime(args.date, '00:00').toUTC().toISO()
 
   if (!exceptionDate) {
@@ -402,6 +513,38 @@ export async function createBlockedInterval(args: {
   return created as ScheduleException
 }
 
+export async function updateBookingStatus(args: {
+  bookingId: string
+  payload: Payload
+  status: Booking['status']
+}) {
+  const { bookingId, payload, status } = args
+  const currentBooking = await getBookingById(payload, bookingId)
+
+  if (currentBooking.status === status) {
+    return currentBooking
+  }
+
+  const updatedBooking = (await payload.update({
+    collection: 'bookings',
+    context: {
+      skipBookingLockSync: true,
+    },
+    data: {
+      status,
+    },
+    depth: 1,
+    id: bookingId,
+    overrideAccess: true,
+  })) as Booking
+
+  if (!shouldBookingBlockSchedule(status)) {
+    await releaseBookingLocks(payload, bookingId)
+  }
+
+  return updatedBooking
+}
+
 export function bookingToPublicItem(booking: Booking) {
   const masterName =
     typeof booking.master === 'object' && booking.master
@@ -420,6 +563,7 @@ export function bookingToPublicItem(booking: Booking) {
     endsAt: booking.endsAt,
     id: booking.id,
     masterName,
+    referenceCode: booking.referenceCode || null,
     serviceTitle,
     source: booking.source,
     startsAt: booking.startsAt,

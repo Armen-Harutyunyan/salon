@@ -1,6 +1,7 @@
 import { getAppBaseUrl, getTelegramBotToken } from '@/lib/env'
 import type { Booking, Master } from '@/payload-types'
 import { formatDateTimeLabel } from './booking/time'
+import { relationToId } from './relations'
 import { createStaffToken } from './staff-token'
 
 type TelegramReplyMarkup = Record<string, unknown>
@@ -33,6 +34,46 @@ export async function sendTelegramMessage(args: TelegramSendMessage) {
     reply_markup: args.replyMarkup,
     text: args.text,
   })
+}
+
+function getServiceTitle(booking: Booking) {
+  return typeof booking.service === 'object' && booking.service
+    ? booking.service.title
+    : 'Ծառայություն'
+}
+
+function getMasterName(booking: Booking) {
+  if (typeof booking.master === 'object' && booking.master) {
+    return booking.master.name || 'Մասնագետ'
+  }
+
+  return relationToId(booking.master) || 'Մասնագետ'
+}
+
+export function formatBookingStatusLabel(status: Booking['status']) {
+  switch (status) {
+    case 'pending':
+      return 'սպասման մեջ'
+    case 'confirmed':
+      return 'հաստատված'
+    case 'cancelled':
+      return 'չեղարկված'
+    case 'completed':
+      return 'ավարտված'
+    case 'no-show':
+      return 'չի ներկայացել'
+    default:
+      return status
+  }
+}
+
+export function formatBookingSummary(booking: Booking) {
+  return [
+    `Կոդ՝ ${booking.referenceCode || booking.id}`,
+    `${formatDateTimeLabel(booking.startsAt)} • ${getServiceTitle(booking)}`,
+    `Մասնագետ՝ ${getMasterName(booking)}`,
+    `Կարգավիճակ՝ ${formatBookingStatusLabel(booking.status)}`,
+  ].join('\n')
 }
 
 export function buildClientKeyboard() {
@@ -93,12 +134,7 @@ export function formatBookingsDigest(bookings: Booking[]) {
   return [
     'Այսօրվա ամրագրումները՝',
     ...bookings.map((booking) => {
-      const serviceTitle =
-        typeof booking.service === 'object' && booking.service
-          ? booking.service.title
-          : 'Ծառայություն'
-
-      return `• ${formatDateTimeLabel(booking.startsAt)} — ${booking.clientName} (${serviceTitle})`
+      return `• ${formatDateTimeLabel(booking.startsAt)} — ${booking.clientName} (${getServiceTitle(booking)})`
     }),
   ].join('\n')
 }

@@ -2,6 +2,8 @@ const defaultTimezone = 'Europe/Moscow'
 const defaultSlotIntervalMinutes = 15
 const defaultDatabaseUrl = 'mongodb://127.0.0.1:27017/salon'
 const defaultDevelopmentPayloadSecret = 'dev-only-change-me'
+const defaultPendingBookingHoldMinutes = 30
+const defaultPublicMutationRateLimitWindowSeconds = 60
 const weakSecrets = new Set(['change-me', 'changeme', 'default', 'secret'])
 
 function readEnv(name: string) {
@@ -25,6 +27,49 @@ export function getSlotIntervalMinutes() {
 
   if (Number.isNaN(value) || value <= 0) {
     return defaultSlotIntervalMinutes
+  }
+
+  return value
+}
+
+export function getPendingBookingHoldMinutes() {
+  const value = Number(readEnv('PENDING_BOOKING_HOLD_MINUTES') || defaultPendingBookingHoldMinutes)
+
+  if (Number.isNaN(value) || value < 0) {
+    return defaultPendingBookingHoldMinutes
+  }
+
+  return value
+}
+
+export function getPublicMutationRateLimitWindowSeconds() {
+  const value = Number(
+    readEnv('PUBLIC_MUTATION_RATE_LIMIT_WINDOW_SECONDS') ||
+      defaultPublicMutationRateLimitWindowSeconds,
+  )
+
+  if (Number.isNaN(value) || value <= 0) {
+    return defaultPublicMutationRateLimitWindowSeconds
+  }
+
+  return value
+}
+
+export function getPublicBookingRateLimitMaxRequests() {
+  const value = Number(readEnv('PUBLIC_BOOKING_RATE_LIMIT_MAX_REQUESTS') || 5)
+
+  if (Number.isNaN(value) || value <= 0) {
+    return 5
+  }
+
+  return value
+}
+
+export function getPublicCancelRateLimitMaxRequests() {
+  const value = Number(readEnv('PUBLIC_CANCEL_RATE_LIMIT_MAX_REQUESTS') || 8)
+
+  if (Number.isNaN(value) || value <= 0) {
+    return 8
   }
 
   return value
@@ -69,6 +114,10 @@ export function getPayloadSecret() {
 
 export function getTelegramBotToken() {
   return readEnv('TELEGRAM_BOT_TOKEN')
+}
+
+export function getTelegramWebhookSecret() {
+  return readEnv('TELEGRAM_WEBHOOK_SECRET')
 }
 
 export function getTelegramBotUsername() {

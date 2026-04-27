@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { expireStalePendingBookings } from '@/lib/booking/pending'
 import {
   bookingToPublicItem,
   createBookingRecord,
@@ -29,6 +30,7 @@ export async function GET(request: Request) {
   }
 
   const payload = await getPayloadClient()
+  await expireStalePendingBookings(payload)
   const bookings = await getMasterTodayBookings(payload, token.masterId, date)
 
   return NextResponse.json({ bookings: bookings.map((booking) => bookingToPublicItem(booking)) })
@@ -51,6 +53,7 @@ export async function POST(request: Request) {
 
   try {
     const payload = await getPayloadClient()
+    await expireStalePendingBookings(payload)
     const booking = await createBookingRecord({
       clientName: body.clientName,
       clientPhone: body.clientPhone,

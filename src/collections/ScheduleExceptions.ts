@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '@/access/isAdmin'
 import { exceptionTypes } from '@/constants/booking'
+import { ensureValidTimeRange } from '@/lib/booking/validation'
 
 export const ScheduleExceptions: CollectionConfig = {
   slug: 'schedule-exceptions',
@@ -13,6 +14,31 @@ export const ScheduleExceptions: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'reason',
+  },
+  hooks: {
+    beforeValidate: [
+      ({ data }) => {
+        if (!data?.type) {
+          return data
+        }
+
+        if (data.type === 'day-off') {
+          return data
+        }
+
+        if (!(data.startTime && data.endTime)) {
+          throw new Error('Մասնակի օրվա բացառման համար պարտադիր են startTime և endTime դաշտերը')
+        }
+
+        ensureValidTimeRange(
+          data.startTime,
+          data.endTime,
+          'Բացառության ժամային միջակայքը անվավեր է',
+        )
+
+        return data
+      },
+    ],
   },
   fields: [
     {

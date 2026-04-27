@@ -111,9 +111,14 @@ Core rules:
 - `PAYLOAD_SECRET` Payload secret, use a long random value
 - `SALON_TIMEZONE` timezone used for slot calculation
 - `SLOT_INTERVAL_MINUTES` slot step, default `15`
+- `PENDING_BOOKING_HOLD_MINUTES` how long a pending booking can block a slot before auto-cancel
 - `APP_BASE_URL` public app URL used in Telegram web app buttons
 - `TELEGRAM_BOT_TOKEN` token for the shared bot
+- `TELEGRAM_WEBHOOK_SECRET` optional webhook secret checked against `X-Telegram-Bot-Api-Secret-Token`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` optional bot username for frontend links
+- `PUBLIC_MUTATION_RATE_LIMIT_WINDOW_SECONDS` fixed window for public booking/cancel rate limits
+- `PUBLIC_BOOKING_RATE_LIMIT_MAX_REQUESTS` max booking attempts per window
+- `PUBLIC_CANCEL_RATE_LIMIT_MAX_REQUESTS` max cancel attempts per window
 
 ## Docker
 
@@ -144,10 +149,12 @@ Recommended defaults:
 
 - `SALON_TIMEZONE=Europe/Moscow`
 - `SLOT_INTERVAL_MINUTES=15`
+- `PENDING_BOOKING_HOLD_MINUTES=30`
 
 Optional envs:
 
 - `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`
 - `SEED_SECRET`
 
@@ -156,6 +163,7 @@ Production values:
 - `APP_BASE_URL` should be your public HTTPS URL, for example `https://salon.example.com`
 - `PAYLOAD_SECRET` should be generated, for example with `openssl rand -base64 32`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` should be stored without leading `@`
+- `TELEGRAM_WEBHOOK_SECRET` should match the secret token you use when calling Telegram `setWebhook`
 - set Node.js version to `22.x` in Vercel to match the project runtime and Docker image
 
 Important limitation:

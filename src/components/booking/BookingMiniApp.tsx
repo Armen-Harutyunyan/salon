@@ -2,7 +2,12 @@
 
 import { useEffect, useEffectEvent, useMemo, useState, useTransition } from 'react'
 import { todayDateString } from '@/lib/booking/time'
-import type { PublicMasterItem, PublicServiceItem, SlotItem } from '@/lib/booking/types'
+import type {
+  PublicBookingItem,
+  PublicMasterItem,
+  PublicServiceItem,
+  SlotItem,
+} from '@/lib/booking/types'
 import { BookingHero } from './BookingHero'
 import { BookingMasterGrid } from './BookingMasterGrid'
 import { BookingServiceSection } from './BookingServiceSection'
@@ -14,21 +19,55 @@ type BootstrapResponse = {
   services: PublicServiceItem[]
 }
 
+type TelegramMiniAppUser = {
+  first_name?: string
+  id?: number
+  last_name?: string
+  username?: string
+}
+
+type TelegramWebApp = {
+  enableClosingConfirmation?: () => void
+  expand?: () => void
+  initData?: string
+  initDataUnsafe?: {
+    user?: TelegramMiniAppUser
+  }
+  ready?: () => void
+}
+
+type TelegramAccount = {
+  displayName: string
+  id: string
+  username: string | null
+}
+
+type MyBookingsResponse = {
+  bookings: PublicBookingItem[]
+  user: TelegramAccount
+}
+
 export function BookingMiniApp() {
   const [services, setServices] = useState<PublicServiceItem[]>([])
   const [masters, setMasters] = useState<PublicMasterItem[]>([])
   const [slots, setSlots] = useState<SlotItem[]>([])
+  const [myBookings, setMyBookings] = useState<PublicBookingItem[]>([])
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [selectedMasterId, setSelectedMasterId] = useState('')
   const [selectedDate, setSelectedDate] = useState(todayDateString())
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
+  const [telegramInitData, setTelegramInitData] = useState('')
+  const [telegramAccount, setTelegramAccount] = useState<TelegramAccount | null>(null)
+  const [latestBooking, setLatestBooking] = useState<PublicBookingItem | null>(null)
+  const [cancellingBookingId, setCancellingBookingId] = useState('')
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isBootstrapping, startBootstrapTransition] = useTransition()
   const [isSubmitting, startSubmitTransition] = useTransition()
   const [isLoadingSlots, startSlotsTransition] = useTransition()
+  const [isLoadingMyBookings, startMyBookingsTransition] = useTransition()
 
   const bootstrap = useEffectEvent(async () => {
     const response = await fetch('/api/public/bootstrap')
@@ -44,6 +83,65 @@ export function BookingMiniApp() {
 
   useEffect(() => {
     startBootstrapTransition(bootstrap)
+  }, [])
+
+  const bootstrapTelegram = useEffectEvent(() => {
+    const telegram = (
+      window as Window & {
+        Telegram?: {
+          WebApp?: TelegramWebApp
+        }
+      }
+    ).Telegram?.WebApp
+
+    if (!telegram) {
+      return false
+    }
+
+    telegram.ready?.()
+    telegram.expand?.()
+    telegram.enableClosingConfirmation?.()
+
+    const rawInitData = telegram.initData?.trim() || ''
+    const telegramUser = telegram.initDataUnsafe?.user
+
+    if (rawInitData) {
+      setTelegramInitData(rawInitData)
+    }
+
+    if (telegramUser?.id) {
+      const displayName = [telegramUser.first_name, telegramUser.last_name]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+
+      setTelegramAccount({
+        displayName,
+        id: String(telegramUser.id),
+        username: telegramUser.username || null,
+      })
+      setClientName((currentValue) => currentValue || displayName)
+    }
+
+    return true
+  })
+
+  useEffect(() => {
+    if (bootstrapTelegram()) {
+      return
+    }
+
+    const interval = window.setInterval(() => {
+      if (bootstrapTelegram()) {
+        window.clearInterval(interval)
+      }
+    }, 250)
+    const timeout = window.setTimeout(() => window.clearInterval(interval), 4000)
+
+    return () => {
+      window.clearInterval(interval)
+      window.clearTimeout(timeout)
+    }
   }, [])
 
   const filteredMasters = useMemo(() => {
@@ -84,6 +182,33 @@ export function BookingMiniApp() {
     setSelectedSlotStart('')
   })
 
+  const refreshMyBookings = useEffectEvent(async () => {
+    if (!telegramInitData) {
+      setMyBookings([])
+      return
+    }
+
+    const response = await fetch('/api/public/me', {
+      headers: {
+        'x-telegram-init-data': telegramInitData,
+      },
+    })
+    const data = (await response.json()) as MyBookingsResponse & { error?: string }
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        setMyBookings([])
+        return
+      }
+
+      setError(data.error || 'Չհաջողվեց ստանալ ամրագրումների ցանկը')
+      return
+    }
+
+    setMyBookings(data.bookings)
+    setTelegramAccount(data.user)
+  })
+
   useEffect(() => {
     if (!(selectedDate && activeMasterId && selectedServiceId)) {
       return
@@ -91,6 +216,14 @@ export function BookingMiniApp() {
 
     startSlotsTransition(loadSlots)
   }, [activeMasterId, selectedDate, selectedServiceId])
+
+  useEffect(() => {
+    if (!telegramInitData) {
+      return
+    }
+
+    startMyBookingsTransition(refreshMyBookings)
+  }, [telegramInitData])
 
   const heroStats = [
     {
@@ -122,24 +255,64 @@ export function BookingMiniApp() {
       }),
       headers: {
         'Content-Type': 'application/json',
+        ...(telegramInitData
+          ? {
+              'x-telegram-init-data': telegramInitData,
+            }
+          : {}),
       },
       method: 'POST',
     })
 
-    const data = (await response.json()) as { error?: string }
+    const data = (await response.json()) as { booking?: PublicBookingItem; error?: string }
 
     if (!response.ok) {
       setError(data.error || 'Չհաջողվեց ստեղծել ամրագրումը')
       return
     }
 
+    setLatestBooking(data.booking || null)
     setSuccessMessage(
-      'Ամրագրումը ստեղծվեց։ Այն արդեն պահպանվել է համակարգում, և այս ժամը այլևս հասանելի չէ մյուս հաճախորդներին։',
+      'Ամրագրումը ստեղծվեց։ Այն արդեն պահպանվել է համակարգում և հասանելի է «Իմ ամրագրումները» բաժնում։',
     )
     setClientName('')
     setClientPhone('')
     setSelectedSlotStart('')
+
+    await Promise.all([loadSlots(), refreshMyBookings()])
   }
+
+  const cancelBooking = useEffectEvent(async (bookingId: string) => {
+    if (!telegramInitData) {
+      setError('Այս գործողությունը հասանելի է միայն Telegram Mini App-ից')
+      return
+    }
+
+    setError('')
+    setSuccessMessage('')
+    setCancellingBookingId(bookingId)
+
+    try {
+      const response = await fetch(`/api/public/bookings/${bookingId}/cancel`, {
+        headers: {
+          'x-telegram-init-data': telegramInitData,
+        },
+        method: 'PATCH',
+      })
+      const data = (await response.json()) as { booking?: PublicBookingItem; error?: string }
+
+      if (!response.ok) {
+        setError(data.error || 'Չհաջողվեց չեղարկել ամրագրումը')
+        return
+      }
+
+      setLatestBooking(data.booking || null)
+      setSuccessMessage('Ամրագրումը չեղարկվեց։ Ազատված ժամը կրկին հասանելի է ամրագրման համար։')
+      await Promise.all([refreshMyBookings(), loadSlots()])
+    } finally {
+      setCancellingBookingId('')
+    }
+  })
 
   const submitDisabled = !(
     clientName.trim() &&
@@ -181,11 +354,18 @@ export function BookingMiniApp() {
       </section>
 
       <BookingSidebar
+        cancellingBookingId={cancellingBookingId}
         clientName={clientName}
         clientPhone={clientPhone}
+        confirmedBooking={latestBooking}
         error={error}
         isBootstrapping={isBootstrapping}
+        isLoadingMyBookings={isLoadingMyBookings}
         isSubmitting={isSubmitting}
+        myBookings={myBookings}
+        onCancelBooking={(bookingId) =>
+          startMyBookingsTransition(async () => cancelBooking(bookingId))
+        }
         onClientNameChange={setClientName}
         onClientPhoneChange={setClientPhone}
         onSubmit={() => startSubmitTransition(submitBooking)}
@@ -195,6 +375,7 @@ export function BookingMiniApp() {
         selectedSlot={selectedSlot}
         submitDisabled={submitDisabled}
         successMessage={successMessage}
+        telegramDisplayName={telegramAccount?.displayName || ''}
       />
     </div>
   )

@@ -48,6 +48,10 @@ function getStatusLabel(status: string) {
       return 'հաստատված'
     case 'cancelled':
       return 'չեղարկված'
+    case 'completed':
+      return 'ավարտված'
+    case 'no-show':
+      return 'չի ներկայացել'
     default:
       return status
   }
@@ -74,6 +78,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
   const [isLoading, startLoadingTransition] = useTransition()
   const [isSubmittingBooking, startBookingTransition] = useTransition()
   const [isSubmittingBlock, startBlockTransition] = useTransition()
+  const [updatingBookingId, setUpdatingBookingId] = useState('')
 
   async function refreshStaffData() {
     const response = await fetch(`/api/staff/me?token=${encodeURIComponent(token)}`)
@@ -167,6 +172,7 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     setNotes('')
     setSelectedSlotStart('')
     await refreshStaffData()
+    await loadSlots()
   }
 
   async function submitBlock() {
@@ -198,6 +204,41 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
     setSuccessMessage('Ժամահատվածը արգելափակվեց։')
     setBlockReason('')
     await refreshStaffData()
+    await loadSlots()
+  }
+
+  async function updateBookingStatus(
+    bookingId: string,
+    status: 'cancelled' | 'completed' | 'confirmed' | 'no-show',
+  ) {
+    setError('')
+    setSuccessMessage('')
+    setUpdatingBookingId(bookingId)
+
+    try {
+      const response = await fetch(`/api/staff/bookings/${bookingId}`, {
+        body: JSON.stringify({
+          status,
+          token,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'PATCH',
+      })
+      const data = (await response.json()) as { error?: string }
+
+      if (!response.ok) {
+        setError(data.error || 'Չհաջողվեց թարմացնել ամրագրումը')
+        return
+      }
+
+      setSuccessMessage('Ամրագրման կարգավիճակը թարմացվեց։')
+      await refreshStaffData()
+      await loadSlots()
+    } finally {
+      setUpdatingBookingId('')
+    }
   }
 
   if (!token) {
@@ -394,6 +435,60 @@ export function StaffMiniApp(props: StaffMiniAppProps) {
                   <p className="mt-1 text-stone-500">
                     {getSourceLabel(booking.source)} • {getStatusLabel(booking.status)}
                   </p>
+                  <p className="mt-1 text-stone-500">Կոդ՝ {booking.referenceCode || booking.id}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {booking.status === 'pending' && (
+                      <button
+                        className="rounded-full border border-emerald-200/30 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/50 disabled:cursor-not-allowed"
+                        disabled={updatingBookingId === booking.id}
+                        onClick={() =>
+                          startLoadingTransition(() => updateBookingStatus(booking.id, 'confirmed'))
+                        }
+                        type="button"
+                      >
+                        {updatingBookingId === booking.id ? 'Թարմացնում ենք...' : 'Հաստատել'}
+                      </button>
+                    )}
+
+                    {['pending', 'confirmed'].includes(booking.status) && (
+                      <button
+                        className="rounded-full border border-rose-200/30 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-200/50 disabled:cursor-not-allowed"
+                        disabled={updatingBookingId === booking.id}
+                        onClick={() =>
+                          startLoadingTransition(() => updateBookingStatus(booking.id, 'cancelled'))
+                        }
+                        type="button"
+                      >
+                        {updatingBookingId === booking.id ? 'Թարմացնում ենք...' : 'Չեղարկել'}
+                      </button>
+                    )}
+
+                    {booking.status === 'confirmed' && (
+                      <button
+                        className="rounded-full border border-cyan-200/30 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/50 disabled:cursor-not-allowed"
+                        disabled={updatingBookingId === booking.id}
+                        onClick={() =>
+                          startLoadingTransition(() => updateBookingStatus(booking.id, 'completed'))
+                        }
+                        type="button"
+                      >
+                        {updatingBookingId === booking.id ? 'Թարմացնում ենք...' : 'Ավարտված'}
+                      </button>
+                    )}
+
+                    {booking.status === 'confirmed' && (
+                      <button
+                        className="rounded-full border border-amber-200/30 px-3 py-2 text-xs text-amber-100 transition hover:border-amber-200/50 disabled:cursor-not-allowed"
+                        disabled={updatingBookingId === booking.id}
+                        onClick={() =>
+                          startLoadingTransition(() => updateBookingStatus(booking.id, 'no-show'))
+                        }
+                        type="button"
+                      >
+                        {updatingBookingId === booking.id ? 'Թարմացնում ենք...' : 'No Show'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
 
