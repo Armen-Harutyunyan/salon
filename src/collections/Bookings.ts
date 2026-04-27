@@ -147,5 +147,12 @@ export const Bookings: CollectionConfig = {
       name: 'notes',
       type: 'textarea',
     },
+    {
+      name: 'reminderSentAt',
+      type: 'date',
+      admin: {
+        readOnly: true,
+      },
+    },
   ],
 }

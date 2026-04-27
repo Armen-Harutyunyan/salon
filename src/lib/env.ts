@@ -4,6 +4,8 @@ const defaultDatabaseUrl = 'mongodb://127.0.0.1:27017/salon'
 const defaultDevelopmentPayloadSecret = 'dev-only-change-me'
 const defaultPendingBookingHoldMinutes = 30
 const defaultPublicMutationRateLimitWindowSeconds = 60
+const defaultBookingReminderLeadHours = 5
+const defaultBookingReminderWindowMinutes = 15
 const weakSecrets = new Set(['change-me', 'changeme', 'default', 'secret'])
 
 function readEnv(name: string) {
@@ -75,6 +77,28 @@ export function getPublicCancelRateLimitMaxRequests() {
   return value
 }
 
+export function getBookingReminderLeadHours() {
+  const value = Number(readEnv('BOOKING_REMINDER_LEAD_HOURS') || defaultBookingReminderLeadHours)
+
+  if (Number.isNaN(value) || value <= 0) {
+    return defaultBookingReminderLeadHours
+  }
+
+  return value
+}
+
+export function getBookingReminderWindowMinutes() {
+  const value = Number(
+    readEnv('BOOKING_REMINDER_WINDOW_MINUTES') || defaultBookingReminderWindowMinutes,
+  )
+
+  if (Number.isNaN(value) || value <= 0) {
+    return defaultBookingReminderWindowMinutes
+  }
+
+  return value
+}
+
 export function getAppBaseUrl() {
   const rawValue = readEnv('APP_BASE_URL') || 'http://localhost:3000'
   const appUrl = new URL(rawValue)
@@ -118,6 +142,10 @@ export function getTelegramBotToken() {
 
 export function getTelegramWebhookSecret() {
   return readEnv('TELEGRAM_WEBHOOK_SECRET')
+}
+
+export function getCronSecret() {
+  return readEnv('CRON_SECRET')
 }
 
 export function getTelegramBotUsername() {

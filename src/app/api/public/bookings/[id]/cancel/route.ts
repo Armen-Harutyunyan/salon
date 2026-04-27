@@ -88,7 +88,7 @@ export async function PATCH(request: Request, context: RouteContext) {
             text: `Հաճախորդը չեղարկել է ամրագրումը՝ ${updatedBooking.clientName}\n${formatBookingSummary(updatedBooking)}`,
           }),
         ]
-      : []) as Promise<void>[]),
+      : []) as Promise<boolean>[]),
   ])
 
   return NextResponse.json({ booking: bookingToPublicItem(updatedBooking) })

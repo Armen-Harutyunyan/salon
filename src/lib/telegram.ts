@@ -16,20 +16,30 @@ async function callTelegram(method: string, body: Record<string, unknown>) {
   const token = getTelegramBotToken()
 
   if (!token) {
-    return
+    return false
   }
 
-  await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     body: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
     },
     method: 'POST',
   })
+
+  if (!response.ok) {
+    return false
+  }
+
+  const data = (await response.json()) as {
+    ok?: boolean
+  }
+
+  return Boolean(data.ok)
 }
 
 export async function sendTelegramMessage(args: TelegramSendMessage) {
-  await callTelegram('sendMessage', {
+  return callTelegram('sendMessage', {
     chat_id: args.chatId,
     reply_markup: args.replyMarkup,
     text: args.text,

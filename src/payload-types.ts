@@ -275,6 +275,7 @@ export interface Booking {
   priceSnapshot?: number | null;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no-show';
   notes?: string | null;
+  reminderSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -500,6 +501,7 @@ export interface BookingsSelect<T extends boolean = true> {
   priceSnapshot?: T;
   status?: T;
   notes?: T;
+  reminderSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

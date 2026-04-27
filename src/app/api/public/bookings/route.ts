@@ -100,7 +100,7 @@ export async function POST(request: Request) {
               text: `Նոր առցանց ամրագրում՝ ${booking.clientName}\n${formatBookingSummary(booking)}`,
             }),
           ]
-        : []) as Promise<void>[]),
+        : []) as Promise<boolean>[]),
     ])
 
     return NextResponse.json({ booking: bookingToPublicItem(booking) }, { status: 201 })

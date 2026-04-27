@@ -119,6 +119,9 @@ Core rules:
 - `PUBLIC_MUTATION_RATE_LIMIT_WINDOW_SECONDS` fixed window for public booking/cancel rate limits
 - `PUBLIC_BOOKING_RATE_LIMIT_MAX_REQUESTS` max booking attempts per window
 - `PUBLIC_CANCEL_RATE_LIMIT_MAX_REQUESTS` max cancel attempts per window
+- `BOOKING_REMINDER_LEAD_HOURS` how many hours before the visit a reminder is sent
+- `BOOKING_REMINDER_WINDOW_MINUTES` matching window for the reminder job
+- `CRON_SECRET` secret for protected background job endpoints
 
 ## Docker
 
@@ -150,12 +153,15 @@ Recommended defaults:
 - `SALON_TIMEZONE=Europe/Moscow`
 - `SLOT_INTERVAL_MINUTES=15`
 - `PENDING_BOOKING_HOLD_MINUTES=30`
+- `BOOKING_REMINDER_LEAD_HOURS=5`
+- `BOOKING_REMINDER_WINDOW_MINUTES=15`
 
 Optional envs:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME`
+- `CRON_SECRET`
 - `SEED_SECRET`
 
 Production values:
@@ -164,6 +170,7 @@ Production values:
 - `PAYLOAD_SECRET` should be generated, for example with `openssl rand -base64 32`
 - `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` should be stored without leading `@`
 - `TELEGRAM_WEBHOOK_SECRET` should match the secret token you use when calling Telegram `setWebhook`
+- `CRON_SECRET` should be a random secret used by your scheduler when calling `/api/jobs/send-reminders`
 - set Node.js version to `22.x` in Vercel to match the project runtime and Docker image
 
 Important limitation:
