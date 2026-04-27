@@ -212,6 +212,88 @@ export interface Master {
   bio?: string | null;
   photo?: (string | null) | Media;
   services: (string | Service)[];
+  /**
+   * Set the master weekly working days and core working hours.
+   */
+  weeklySchedule?: {
+    monday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    tuesday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    wednesday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    thursday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    friday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    saturday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+    sunday?: {
+      enabled?: boolean | null;
+      /**
+       * Format HH:MM, for example 10:00
+       */
+      startTime?: string | null;
+      /**
+       * Format HH:MM, for example 20:00
+       */
+      endTime?: string | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -453,6 +535,59 @@ export interface MastersSelect<T extends boolean = true> {
   bio?: T;
   photo?: T;
   services?: T;
+  weeklySchedule?:
+    | T
+    | {
+        monday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        tuesday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        wednesday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        thursday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        friday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        saturday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+        sunday?:
+          | T
+          | {
+              enabled?: T;
+              startTime?: T;
+              endTime?: T;
+            };
+      };
   updatedAt?: T;
   createdAt?: T;
 }

@@ -1,4 +1,5 @@
 import { getPayloadClient } from '@/lib/payload'
+import type { WeekdayValue } from './booking/weekly-schedule'
 
 const demoServices = [
   {
@@ -129,7 +130,14 @@ const demoMasters = [
   },
 ] as const
 
-const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const
+const weekdays: WeekdayValue[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+]
 
 async function upsertService(
   title: string,
@@ -172,54 +180,17 @@ async function upsertService(
   })
 }
 
-async function seedWorkingHours(masterId: string) {
-  const payload = await getPayloadClient()
-
-  for (const weekday of weekdays) {
-    const existing = await payload.find({
-      collection: 'working-hours',
-      depth: 0,
-      limit: 1,
-      overrideAccess: true,
-      where: {
-        and: [
-          {
-            master: {
-              equals: masterId,
-            },
-          },
-          {
-            weekday: {
-              equals: weekday,
-            },
-          },
-        ],
-      },
-    })
-
-    const data = {
-      endTime: weekday === 'saturday' ? '16:00' : '20:00',
-      isActive: true,
-      master: masterId,
-      startTime: '10:00',
+function buildWeeklySchedule() {
+  return Object.fromEntries(
+    weekdays.map((weekday) => [
       weekday,
-    }
-
-    if (existing.docs[0]) {
-      await payload.update({
-        collection: 'working-hours',
-        data,
-        id: existing.docs[0].id,
-        overrideAccess: true,
-      })
-    } else {
-      await payload.create({
-        collection: 'working-hours',
-        data,
-        overrideAccess: true,
-      })
-    }
-  }
+      {
+        enabled: true,
+        endTime: weekday === 'saturday' ? '16:00' : '20:00',
+        startTime: '10:00',
+      },
+    ]),
+  )
 }
 
 export async function seedDemoSalonData() {
@@ -275,22 +246,23 @@ export async function seedDemoSalonData() {
       services: serviceIds,
       specialty: master.specialty,
       telegramUserId: master.telegramUserId,
+      weeklySchedule: buildWeeklySchedule(),
     }
 
-    const savedMaster = existingByName
-      ? await payload.update({
-          collection: 'masters',
-          data,
-          id: existingByName.id,
-          overrideAccess: true,
-        })
-      : await payload.create({
-          collection: 'masters',
-          data,
-          overrideAccess: true,
-        })
-
-    await seedWorkingHours(savedMaster.id)
+    if (existingByName) {
+      await payload.update({
+        collection: 'masters',
+        data,
+        id: existingByName.id,
+        overrideAccess: true,
+      })
+    } else {
+      await payload.create({
+        collection: 'masters',
+        data,
+        overrideAccess: true,
+      })
+    }
   }
 
   return {

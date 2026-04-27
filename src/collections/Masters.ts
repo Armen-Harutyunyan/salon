@@ -2,6 +2,13 @@ import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '@/access/isAdmin'
 import { publicRead } from '@/access/publicRead'
+import {
+  buildWeeklyScheduleField,
+  hasConfiguredWeeklySchedule,
+  hydrateMasterWeeklySchedule,
+  validateWeeklySchedule,
+} from '@/lib/booking/weekly-schedule'
+import type { Master } from '@/payload-types'
 
 export const Masters: CollectionConfig = {
   slug: 'masters',
@@ -12,7 +19,36 @@ export const Masters: CollectionConfig = {
     update: isAdmin,
   },
   admin: {
+    components: {
+      views: {
+        list: {
+          actions: ['./components/admin/MastersCalendarLink#MastersCalendarLink'],
+        },
+      },
+    },
     useAsTitle: 'name',
+  },
+  hooks: {
+    afterRead: [
+      async ({ doc, req }) => {
+        const master = doc as Master
+
+        if (!(master?.id && !hasConfiguredWeeklySchedule(master.weeklySchedule))) {
+          return doc
+        }
+
+        return hydrateMasterWeeklySchedule(req.payload, master)
+      },
+    ],
+    beforeValidate: [
+      ({ data }) => {
+        if (data?.weeklySchedule) {
+          validateWeeklySchedule(data.weeklySchedule)
+        }
+
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -54,5 +90,6 @@ export const Masters: CollectionConfig = {
       relationTo: 'services',
       required: true,
     },
+    buildWeeklyScheduleField(),
   ],
 }

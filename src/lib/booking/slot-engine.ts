@@ -10,7 +10,7 @@ import {
 import { getSlotIntervalMinutes } from '@/lib/env'
 import { validatePhone } from '@/lib/phone'
 import { relationsToIds, relationToId } from '@/lib/relations'
-import type { Booking, Master, ScheduleException, Service, WorkingHour } from '@/payload-types'
+import type { Booking, Master, ScheduleException, Service } from '@/payload-types'
 import { generateBookingReferenceCode } from './reference'
 import {
   combineDateAndTime,
@@ -21,6 +21,11 @@ import {
 } from './time'
 import type { SlotItem } from './types'
 import { ensureValidDateInput, ensureValidTimeRange } from './validation'
+import {
+  getMasterWorkingInterval,
+  hydrateMasterWeeklySchedule,
+  type WeekdayValue,
+} from './weekly-schedule'
 
 type TimeInterval = {
   end: DateTime
@@ -65,48 +70,20 @@ async function getService(payload: Payload, serviceId: string) {
 }
 
 async function getMaster(payload: Payload, masterId: string) {
-  const master = (await payload.findByID({
+  const rawMaster = (await payload.findByID({
     collection: 'masters',
     depth: 0,
     id: masterId,
     overrideAccess: true,
   })) as Master
 
+  const master = await hydrateMasterWeeklySchedule(payload, rawMaster)
+
   if (!master?.isActive) {
     throw new Error('Մասնագետը հասանելի չէ')
   }
 
   return master
-}
-
-async function getWorkingHours(payload: Payload, masterId: string, weekday: string) {
-  const result = await payload.find({
-    collection: 'working-hours',
-    depth: 0,
-    limit: 100,
-    overrideAccess: true,
-    where: {
-      and: [
-        {
-          master: {
-            equals: masterId,
-          },
-        },
-        {
-          weekday: {
-            equals: weekday,
-          },
-        },
-        {
-          isActive: {
-            equals: true,
-          },
-        },
-      ],
-    },
-  })
-
-  return result.docs as WorkingHour[]
 }
 
 async function getExceptions(payload: Payload, masterId: string, date: string) {
@@ -235,10 +212,16 @@ function exceptionToInterval(exception: ScheduleException, date: string): TimeIn
   return buildInterval(date, exception.startTime, exception.endTime)
 }
 
-function hoursToIntervals(workingHours: WorkingHour[], date: string) {
-  return workingHours
-    .map((item) => buildInterval(date, item.startTime, item.endTime))
-    .filter((item): item is TimeInterval => Boolean(item))
+function hoursToIntervals(master: Pick<Master, 'weeklySchedule'>, date: string, weekday: string) {
+  const schedule = getMasterWorkingInterval(master, weekday as WeekdayValue)
+
+  if (!schedule) {
+    return []
+  }
+
+  const interval = buildInterval(date, schedule.startTime, schedule.endTime)
+
+  return interval ? [interval] : []
 }
 
 function ensureMasterCanProvideService(master: Master, serviceId: string) {
@@ -292,13 +275,12 @@ export async function getAvailableSlots(input: SlotInput): Promise<SlotItem[]> {
 
   const weekday = getWeekdayValue(date)
 
-  const [workingHours, exceptions, bookings] = await Promise.all([
-    getWorkingHours(payload, masterId, weekday),
+  const [exceptions, bookings] = await Promise.all([
     getExceptions(payload, masterId, date),
     getBlockingBookings(payload, masterId, date),
   ])
 
-  const baseIntervals = hoursToIntervals(workingHours, date)
+  const baseIntervals = hoursToIntervals(master, date, weekday)
   const busyIntervals = getBusyIntervals(exceptions, bookings, date)
   const slotDuration = service.durationMinutes
   const slotStep = getSlotIntervalMinutes()

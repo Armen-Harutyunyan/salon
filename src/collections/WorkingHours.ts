@@ -13,6 +13,7 @@ export const WorkingHours: CollectionConfig = {
     update: isAdmin,
   },
   admin: {
+    hidden: true,
     useAsTitle: 'weekday',
   },
   hooks: {
